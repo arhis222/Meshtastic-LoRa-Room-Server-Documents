@@ -10,6 +10,11 @@ LoRa Room Server — Documents Repository
 Polytech Grenoble – INFO4 – 2025-2026
 </p>
 
+<p align="center">
+  <img src="documents/Source%20Images%20%26%20Other%20DIagrams/Logo_polytech.png" width="120">
+  &nbsp;&nbsp;&nbsp;
+</p>
+
 The project implements a persistent room-based messaging server running on a Raspberry Pi,
 connected to a LoRa / Meshtastic network, allowing structured communication without internet.
 
