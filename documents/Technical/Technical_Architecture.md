@@ -15,17 +15,17 @@ The system follows a modular architecture to separate communication logic from b
 Here is the technical description of each Python module composing the **Room Server LoRa** project:
 
 
-| File / Module               | Main Role                            | Technical Description                                                                                                                                              |
-| :-------------------------- | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`main.py`**               | **Entry Point (Orchestrator)**       | This is the file executed to start the server. It initializes the database, the`RoomManager`, and connects the hardware.                                           |
-| **`database.py`**           | **Data Management (Storage)**        | Manages the**SQLite** connection. It creates the tables (`rooms`, `messages`) and contains functions to insert or read data (CRUD).                                |
-| **`room_manager.py`**       | **Business Logic (Brain)**           | Decides what to do with a message. If it's a command, it executes it. If it's a message, it stores it. It acts as the link between the`Parser` and the `Database`. |
-| **`parser.py`**             | **Syntax Parser (Translator)**       | Analyzes the received text. It detects if the message starts with`/` (e.g., `/room create`) and separates the action from the arguments.                           |
-| **`meshtastic_comm_hw.py`** | **Hardware Interface (Real Driver)** | This is the Wio-E5 "driver". It listens to the USB port (`/dev/ttyUSB0`), captures incoming LoRa signals, and sends responses.                                     |
-| **`meshtastic_comm.py`**    | **Simulation Interface (Mock)**      | Simulates the LoRa interface via the console. Allows testing the entire server logic without connected hardware, using the keyboard as input and screen as output. |
-| **`client.py`**             | **Client Simulator (Tester)**        | The script used on the test computer. It allows sending messages to the server via a second LoRa module, simulating a real user.                                   |
-| **`reset_db.py`**           | **Maintenance Tool (Cleaner)**       | A small utility script to cleanly delete the`.db` file and reset the database to zero in case of problems.                                                         |
-| **`logger.py`**             | **Logging (Tracker)**                | (Integrated into other files) Used to display colored messages in the terminal (`INFO`, `ERROR`, `DEBUG`) to facilitate debugging.                                 |
+| File / Module               | Main Role                            | Technical Description                                                                                                                                                                                |
+| :-------------------------- | :----------------------------------- |:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`main.py`**               | **Entry Point (Orchestrator)**       | This is the file executed to start the server. It initializes the database, the`RoomManager`, and connects the hardware.                                                                             |
+| **`database.py`**           | **Data Management (Storage)**        | Manages the **SQLite** connection. It creates the tables (`rooms`, `messages`) and contains functions to insert or read data (CRUD).                                                                 |
+| **`room_manager.py`**       | **Business Logic (Brain)**           | **Central module** of the server. It processes incoming commands, manages rooms, applies anti-spam protection, formats long replies, and coordinates all interactions with the SQLite storage layer. |
+| **`parser.py`**             | **Syntax Parser (Translator)**       | Analyzes the received text. It detects if the message starts with`/` (e.g., `/room create`) and separates the action from the arguments.                                                             |
+| **`meshtastic_comm_hw.py`** | **Hardware Interface (Real Driver)** | This is the Wio-E5 "driver". It listens to the USB port (`/dev/ttyUSB0`), captures incoming LoRa signals, and sends responses.                                                                       |
+| **`meshtastic_comm.py`**    | **Simulation Interface (Mock)**      | Simulates the LoRa interface via the console. Allows testing the entire server logic without connected hardware, using the keyboard as input and screen as output.                                   |
+| **`client.py`**             | **Client Simulator (Tester)**        | The script used on the test computer. It allows sending messages to the server via a second LoRa module, simulating a real user.                                                                     |
+| **`reset_db.py`**           | **Maintenance Tool (Cleaner)**       | A small utility script to cleanly delete the`.db` file and reset the database to zero in case of problems.                                                                                           |
+| **`logger.py`**             | **Logging (Tracker)**                | (Integrated into other files) Used to display colored messages in the terminal (`INFO`, `ERROR`, `DEBUG`) to facilitate debugging.                                                                   |
 
 ### How they interact (Data Flow)
 
@@ -51,9 +51,13 @@ We selected **SQLite** as our storage engine.
 
 ---
 
-## 3. Sequence Diagrams
+## 3. Sequence Diagram
 
-[[sequence_diagram.png]])* TODOOOOOOOOOOO
+![Sequence Diagram](../Diagrams/sequence_diagram.png)
+
+The following sequence diagram illustrates the complete lifecycle of a `/room post` command,
+from the user smartphone to the LoRa network, then to the Room Server,
+and finally back to the client after database processing.
 
 **Scenario: Posting a Message**
 
@@ -66,40 +70,40 @@ We selected **SQLite** as our storage engine.
 
 ---
 
-## 4. Optimisation du Réseau : Réponses en Messages Privés (Direct Messages)
+## 4. Network Optimization: Direct Message (DM) Responses
 
-Lors de l'utilisation du serveur, vous remarquerez que si vous envoyez une commande (ex: `/room list` ou `/room read`) dans le canal public du projet (ex: `projet_s8`), le serveur ne répond pas dans ce même canal public, mais ouvre une **conversation privée** avec votre téléphone.
+When using the server, you will notice that if you send a command (e.g., **/room list** or **/room read**) in the project's public channel, the server does not reply in that same public channel. Instead, it opens a **private conversation** (Direct Message) with your device.
 
-### Pourquoi ce choix technique ?
+### Why this technical choice?
 
-1. **Économie de la bande passante (Duty Cycle) :** Le réseau LoRa est extrêmement contraint. Si le serveur diffusait (Broadcast) la liste de tous les salons ou l'historique des messages dans le canal public, cela monopoliserait l'antenne et spammerait l'écran de tous les utilisateurs du réseau.
-2. **Expérience Utilisateur (UX) :** Chaque téléphone (nœud client) reçoit ses propres requêtes de manière isolée et privée, rendant la lecture beaucoup plus claire. Le canal public reste ainsi propre et réservé aux communications globales.
+* **Bandwidth Efficiency (Duty Cycle):** The LoRa network is subject to strict bandwidth constraints. If the server were to broadcast full lists or message histories in the public channel, it would monopolize the antenna and spam the screens of all users.
+* **User Experience (UX):** Each client node receives its requested data in an isolated, private manner. This significantly improves readability on small displays such as OLED screens and mobile devices
 
-### Configuration de l'identité du Serveur
+### Server Identity Configuration
 
-Par défaut, le module Wio-E5 branché au Raspberry Pi s'identifie sur le réseau avec un nom générique lié à son adresse MAC (par exemple : `Meshtastic 1446`).
+By default, the Wio-E5 module identifies itself on the network with a generic name based on its hardware address.
 
-Pour rendre l'interface plus intuitive pour les utilisateurs finaux, nous avons renommé le nœud serveur pour qu'il apparaisse clairement comme le **"Room Server"** lors de l'envoi des messages privés.
-
-Cette configuration a été appliquée via la commande Meshtastic CLI suivante sur le Raspberry Pi :
+To make the interface more intuitive for end-users, we renamed the server node to appear clearly as the **"Room Server"**. This configuration is applied using the **Meshtastic CLI** on the Raspberry Pi:
 
 ```bash
 meshtastic --set-owner "Room Server" --set-owner-short "SRV"
 ```
 
-## 5. Limitations et Optimisations (Contraintes LoRa)
+## 5. Limitations and Optimizations (LoRa Constraints)
 
-* **Bande Passante (Bandwidth) :** En raison des règles strictes de temps d'antenne (*Duty Cycle* LoRa) et du faible débit, la commande `read` est volontairement limitée pour ne retourner que 1 à 10 messages à la fois afin d'éviter de saturer le réseau.
-* **Latence (Latency) :** Le temps de réponse asynchrone peut varier entre 2 et 30 secondes en fonction de la congestion du réseau et des sauts radio (hops) nécessaires.
-* **Taille des Messages (Chunking à 32 caractères) :** Bien que la charge utile (payload) maximale théorique d'un paquet Meshtastic soit d'environ 200 octets, nous avons conçu le serveur pour découper systématiquement les messages longs en blocs de **32 caractères maximum**. Ce choix technique répond à deux enjeux majeurs :
-  1. *Réduction du "Time-on-Air" et des pertes :* Des paquets très courts minimisent le temps d'émission radio. Cela réduit drastiquement le risque de collisions en vol et de pertes de paquets (Packet Loss), rendant notre système beaucoup plus robuste.
-  2. *Expérience Utilisateur (UX) optimisée :* La limite de 32 caractères correspond à la largeur de lecture idéale pour les petits écrans matériels (ex: écrans OLED des modules Heltec) et les terminaux mobiles, garantissant un affichage propre sans coupure arbitraire des mots au milieu d'une phrase.
+* **Bandwidth Management:** Due to strict airtime rules (*LoRa Duty Cycle*) and low throughput, the \`read\` command is intentionally limited to return only 1 to 10 messages at a time to prevent network saturation.
+* **Latency:** Asynchronous response times can vary between 2 and 30 seconds depending on network congestion and the number of radio hops required.
+* **Message Size (32-character Chunking):** While the theoretical maximum payload of a Meshtastic packet is approximately 200 bytes, the server is designed to systematically split long messages into blocks of **32 characters maximum**. This technical choice addresses two major challenges:
+    1. *Reduction of "Time-on-Air" and Loss:* Short packets minimize radio transmission time, drastically reducing the risk of collisions and packet loss, making the system significantly more robust.
+    2. *Optimized User Experience (UX):* The 32-character limit matches the ideal reading width for small hardware displays (e.g., Heltec OLED screens) and mobile devices, ensuring clean text without arbitrary word breaks in the middle of sentences.
+* **Robustness:** The SQLite database can be configured in WAL (Write-Ahead Logging) mode to reduce data corruption risks in the event of an abrupt power failure or shutdown.
 
-## 6. Protection Anti-Spam (Rate Limiting)
+## 6. Anti-Spam Protection (Rate Limiting)
 
-* **Protection contre le Spam :** Afin d'éviter la saturation du réseau LoRa et les abus potentiels, le serveur implémente un mécanisme de **cooldown par utilisateur**. Chaque nœud doit attendre **10 secondes** entre deux commandes `/room`.
-* **Gestion du Débit Réseau :** Cette limitation empêche l'envoi de commandes en rafale qui pourraient monopoliser l'antenne et perturber les communications des autres utilisateurs sur le réseau Meshtastic.
-* **Retour Utilisateur (Feedback) :** Si un utilisateur tente d'envoyer une commande avant la fin du délai, le serveur rejette la requête et renvoie un message d'erreur indiquant le temps restant avant la prochaine commande autorisée.
+* **Spam Protection:** To prevent LoRa network saturation and potential misuse, the server implements a **per-user cooldown** mechanism. Each node must wait **10 seconds** between two \`/room\` commands.
+* **Network Throughput Management:** This limitation prevents burst command transmission that could monopolize the antenna and disrupt communications for other users on the Meshtastic network.
+* **User Feedback:** If a user attempts to send a command before the timer expires, the server rejects the request and returns an error message indicating the remaining cooldown time.
 
-Exemple de réponse :
-Ce mécanisme contribue à maintenir **la stabilité et la fiabilité du serveur** dans un environnement radio contraint comme LoRa.
+> **Example response:** "Error: Please wait 7 more seconds before sending another command." 
+
+This mechanism ensures the **stability and reliability** of the server within a constrained radio environment like LoRa.
