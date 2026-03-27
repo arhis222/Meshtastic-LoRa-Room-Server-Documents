@@ -36,18 +36,17 @@ The server manages chat rooms, stores messages persistently in SQLite, and remai
 ## 2. Roadmap & Milestones
 
 
-| Target Date     | Milestone                                      | Status      |
-| :-------------- | :--------------------------------------------- | :---------- |
-| **Jan 20 - 31** | Project Selection & Technical Analysis         | Done        |
-| **Feb 02 - 06** | Hardware Acquisition & Backend Init (DB/Logic) | Done        |
-| **Feb 09 - 13** | Git Setup, Documentation & Command Parser      | Done        |
-| **Feb 16 - 20** | Winter Holiday                                 | Done        |
-| **Feb 23 - 27** | LoRa Integration & Raspberry Pi Testing        | Done        |
-| **Mar 02 - 06** | Backend Finalization & Robustness              | Done        |
-| **Mar 09 - 13** | Optimization & Multi-client Tests              | Done        |
-| **Mar 16 - 20** | Diagrams, Poster & Flyer                       | Done        |
-| **Mar 23 - 27** | Final Report & Presentation                    | In Progress |
-
+| Target Date     | Milestone                                      | Status |
+| :-------------- | :--------------------------------------------- |:-------|
+| **Jan 20 - 31** | Project Selection & Technical Analysis         | Done   |
+| **Feb 02 - 06** | Hardware Acquisition & Backend Init (DB/Logic) | Done   |
+| **Feb 09 - 13** | Git Setup, Documentation & Command Parser      | Done   |
+| **Feb 16 - 20** | Winter Holiday                                 | Done   |
+| **Feb 23 - 27** | LoRa Integration & Raspberry Pi Testing        | Done   |
+| **Mar 02 - 06** | Backend Finalization & Robustness              | Done   |
+| **Mar 09 - 13** | Optimization & Multi-client Tests              | Done   |
+| **Mar 16 - 20** | Diagrams, Poster & Flyer                       | Done   |
+| **Mar 23 - 27** | Automated Tests, Final Report & Presentation   | Done   |  
 ---
 
 ## 3. Weekly Log (Journal de Bord)
@@ -152,12 +151,13 @@ The server manages chat rooms, stores messages persistently in SQLite, and remai
 
 ### Week 10 (Mar 23 - Mar 27)
 
-* **Focus:** Final Deliverables.
+* **Focus:** QA, CI/CD Pipeline & Final Deliverables.
 * **Tasks Completed:**
-  * Final report writing.
-  * Slides preparation.
-  * Repository cleanup.
-  * Final validation tests.
+  * Developed a 100% coverage automated test suite using **Pytest**.
+  * Integrated **Hardware Mocking** and **In-Memory SQLite** for zero-dependency, high-speed testing (0.16s).
+  * Configured **GitHub Actions CI pipeline** to automatically run the test suite on every commit.
+  * Final report writing and slides preparation.
+  * Repository cleanup and formatting.
 
 ---
 
@@ -172,3 +172,5 @@ The server manages chat rooms, stores messages persistently in SQLite, and remai
 | **GitLab Outage**    | Not initialized yet.            | **Sol:** Used temporary private repo, will fork later.                |
 | **Multiple clients** | Collision / spam                | **Sol:** Cooldown + queue.                                            |
 | **Payload limit**    | Packet overflow.                | **Sol:** Message splitting.                                           |
+| **Code Regressions** | Breaking the system with new code updates.  | **Sol:** Pytest End-to-End automated testing suite.                   |
+| **Testing without LoRa** | Unable to test logic without physical nodes.| **Sol:** Applied "Hardware Mocking" to simulate device behaviors.     |
